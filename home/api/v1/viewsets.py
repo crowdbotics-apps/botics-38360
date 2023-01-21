@@ -1,11 +1,20 @@
 from rest_framework.authtoken.serializers import AuthTokenSerializer
-from rest_framework.viewsets import ModelViewSet, ViewSet
 from rest_framework.authtoken.models import Token
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet, ViewSet
 
 from home.api.v1.serializers import (
     SignupSerializer,
     UserSerializer,
+    AppModelSerializer,
+    PlanModelSerializer,
+)
+from home.api.v1.serializers import SubscriptionModelSerializer
+from home.models import (
+    App,
+    Plan,
+    Subscription,
 )
 
 
@@ -28,3 +37,23 @@ class LoginViewSet(ViewSet):
         token, created = Token.objects.get_or_create(user=user)
         user_serializer = UserSerializer(user)
         return Response({"token": token.key, "user": user_serializer.data})
+
+
+class AppModelViewSet(ModelViewSet):
+    permission_classes = (IsAuthenticated,)
+    queryset = App.objects.all()
+    serializer_class = AppModelSerializer
+
+
+class PlanModelViewSet(ModelViewSet):
+    permission_classes = (IsAuthenticated,)
+    http_method_names = "get"
+    queryset = Plan.objects.all()
+    serializer_class = PlanModelSerializer
+
+
+class SubscriptionModelViewSet(ModelViewSet):
+    permission_classes = (IsAuthenticated,)
+    http_method_names = ("post", "get", "put", "patch")
+    queryset = Subscription.objects.all()
+    serializer_class = SubscriptionModelSerializer
