@@ -8,12 +8,35 @@ from allauth.account.adapter import get_adapter
 from allauth.account.utils import setup_user_email
 from rest_framework import serializers
 from rest_auth.serializers import PasswordResetSerializer
+from rest_framework.serializers import ModelSerializer
+
+from home.models import App
+from home.models import Plan
+from home.models import Subscription
 
 
 User = get_user_model()
 
 
-class SignupSerializer(serializers.ModelSerializer):
+class RequestMixin:
+    def _get_request(self):
+        request = self.context.get("request")
+        if (
+            request
+            and not isinstance(request, HttpRequest)
+            and hasattr(request, "_request")
+        ):
+            request = request._request
+        return request
+
+
+class SaveUserMixin(RequestMixin):
+    def save(self):
+        request = self._get_request()
+        return super().save(user=request.user)
+
+
+class SignupSerializer(RequestMixin, serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('id', 'name', 'email', 'password')
@@ -29,12 +52,6 @@ class SignupSerializer(serializers.ModelSerializer):
                 'allow_blank': False,
             }
         }
-
-    def _get_request(self):
-        request = self.context.get('request')
-        if request and not isinstance(request, HttpRequest) and hasattr(request, '_request'):
-            request = request._request
-        return request
 
     def validate_email(self, email):
         email = get_adapter().clean_email(email)
@@ -74,3 +91,61 @@ class UserSerializer(serializers.ModelSerializer):
 class PasswordSerializer(PasswordResetSerializer):
     """Custom serializer for rest_auth to solve reset password error"""
     password_reset_form_class = ResetPasswordForm
+
+
+class PlanModelSerializer(ModelSerializer):
+    class Meta:
+        model = Plan
+        fields = (
+            "id",
+            "name",
+            "description",
+            "price",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = ("id", "created_at", "updated_at")
+
+
+class SubscriptionModelSerializer(SaveUserMixin, ModelSerializer):
+    class Meta:
+        model = Subscription
+        fields = (
+            "id",
+            "user",
+            "plan",
+            "app",
+            "active",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = (
+            "id",
+            "user",
+            "created_at",
+            "updated_at",
+        )
+
+
+class AppModelSerializer(SaveUserMixin, ModelSerializer):
+    subscription = serializers.SerializerMethodField(required=False)
+
+    class Meta:
+        model = App
+        fields = (
+            "id",
+            "name",
+            "description",
+            "type",
+            "framework",
+            "domain_name",
+            "screenshot",
+            "user",
+            "created_at",
+            "updated_at",
+            "subscription",
+        )
+        read_only_fields = ("id", "user", "created_at", "updated_at", "subscription")
+
+    def get_subscription(self, obj):
+        return obj.subscription.id if obj.subscription else None
