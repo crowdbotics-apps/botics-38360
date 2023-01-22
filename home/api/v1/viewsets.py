@@ -47,7 +47,7 @@ class AppModelViewSet(ModelViewSet):
 
 class PlanModelViewSet(ModelViewSet):
     permission_classes = (IsAuthenticated,)
-    http_method_names = "get"
+    http_method_names = ("get",)
     queryset = Plan.objects.all()
     serializer_class = PlanModelSerializer
 
