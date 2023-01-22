@@ -117,7 +117,8 @@ class Subscription(TimeTrackedModel):
     )
     app = models.ForeignKey(
         App,
-        on_delete=models.PROTECT,
+        on_delete=models.SET_NULL,
+        null=True,
         help_text="App",
     )
     active = models.BooleanField(
