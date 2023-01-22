@@ -5,6 +5,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from home.models import App
+from home.models import DEFAULT_PLANS
 from home.models import Plan
 from home.models import Subscription
 
@@ -151,6 +152,18 @@ class TestPlanViews(BaseTestCase):
         self.assertEqual(plan.name, resp.data["name"])
         self.assertEqual(plan.description, resp.data["description"])
         self.assertEqual(str(plan.price), resp.data["price"])
+
+    def test_list_plan(self):
+        url = reverse("plan-list")
+        resp = self.client.get(url)
+        self.assert_json(resp, 200)
+        for plan in resp.data:
+            plan_dict = {
+                "name": plan["name"],
+                "description": plan["description"],
+                "price": plan["price"]
+            }
+            self.assertIn(plan_dict,  DEFAULT_PLANS)
 
 
 class TestSubscriptionViews(BaseTestCase):
